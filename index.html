@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ReservaLab USM – Cortadora Láser & CNC</title>
+  <meta name="description" content="Plataforma de reservas para máquinas del laboratorio USM. Reserva bloques para la Cortadora Láser o la Máquina CNC con tu correo @usm.cl." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ── HEADER ─────────────────────────────────────────────── -->
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-icon">⚙️</span>
+        <div>
+          <span class="logo-title">ReservaLab</span>
+          <span class="logo-sub">Universidad Santa María</span>
+        </div>
+      </div>
+      <nav class="header-nav">
+        <button class="btn-outline" id="btn-mis-reservas" onclick="openMyReservations()">
+          📋 Mis Reservas
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ── HERO ───────────────────────────────────────────────── -->
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-content">
+      <div class="hero-badge">🔬 Laboratorio de Fabricación Digital</div>
+      <h1 class="hero-title">Reserva tu <span class="gradient-text">Máquina</span></h1>
+      <p class="hero-desc">
+        Accede a la Cortadora Láser o la Máquina CNC reservando tu bloque horario.<br />
+        Solo necesitas tu correo <strong>@usm.cl</strong> y hasta 3 bloques por persona.
+      </p>
+    </div>
+    <!-- floating particles -->
+    <div class="particles" aria-hidden="true">
+      <span class="p p1"></span><span class="p p2"></span><span class="p p3"></span>
+      <span class="p p4"></span><span class="p p5"></span><span class="p p6"></span>
+    </div>
+  </section>
+
+  <!-- ── MAIN ───────────────────────────────────────────────── -->
+  <main class="main-content">
+
+    <!-- STEP 1 – Selección de máquina -->
+    <section class="section" id="section-machine">
+      <div class="section-label">Paso 1</div>
+      <h2 class="section-title">Selecciona la Máquina</h2>
+      <div class="machine-grid">
+
+        <button class="machine-card" id="card-laser" onclick="selectMachine('laser')" aria-pressed="false">
+          <div class="machine-icon">🔴</div>
+          <div class="machine-info">
+            <h3>Cortadora Láser</h3>
+            <p>Corte y grabado de alta precisión en madera, acrílico y más materiales.</p>
+          </div>
+          <div class="machine-check" aria-hidden="true">✓</div>
+        </button>
+
+        <button class="machine-card" id="card-cnc" onclick="selectMachine('cnc')" aria-pressed="false">
+          <div class="machine-icon">🔩</div>
+          <div class="machine-info">
+            <h3>Máquina CNC</h3>
+            <p>Fresado y mecanizado computarizado para piezas con tolerancias exactas.</p>
+          </div>
+          <div class="machine-check" aria-hidden="true">✓</div>
+        </button>
+
+      </div>
+    </section>
+
+    <!-- STEP 2 – Correo -->
+    <section class="section" id="section-email">
+      <div class="section-label">Paso 2</div>
+      <h2 class="section-title">Ingresa tu Correo USM</h2>
+      <div class="email-wrapper">
+        <div class="input-group">
+          <span class="input-icon">✉️</span>
+          <input
+            type="email"
+            id="email-input"
+            class="email-input"
+            placeholder="nombre.apellido@usm.cl / @sansano.usm.cl"
+            autocomplete="email"
+            oninput="validateEmail()"
+          />
+        </div>
+        <div class="email-feedback" id="email-feedback"></div>
+      </div>
+    </section>
+
+    <!-- STEP 3 – Horarios -->
+    <section class="section" id="section-schedule">
+      <div class="section-label">Paso 3</div>
+      <div class="section-header-row">
+        <h2 class="section-title">Selecciona tus Bloques</h2>
+        <div class="block-counter" id="block-counter">
+          <span id="blocks-used">0</span>/3 bloques seleccionados
+        </div>
+      </div>
+
+      <!-- Week Selector -->
+      <div class="week-selector" id="week-selector"></div>
+
+      <div class="legend">
+        <span class="legend-item"><span class="dot available"></span> Disponible</span>
+        <span class="legend-item"><span class="dot selected"></span> Seleccionado</span>
+        <span class="legend-item"><span class="dot blocked"></span> Sin ayudante</span>
+        <span class="legend-item"><span class="dot taken"></span> Ocupado</span>
+      </div>
+
+      <div class="schedule-wrapper">
+        <div class="schedule-table" id="schedule-table" role="grid" aria-label="Tabla de horarios">
+          <!-- filled by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- STEP 4 – Confirmar -->
+    <section class="section" id="section-confirm">
+      <div class="section-label">Paso 4</div>
+      <h2 class="section-title">Confirma tu Reserva</h2>
+      <div class="confirm-box" id="confirm-box">
+        <p class="confirm-hint">Completa los pasos anteriores para ver el resumen aquí.</p>
+      </div>
+      <button class="btn-primary" id="btn-confirm" onclick="confirmReservation()" disabled>
+        🗓️ Confirmar Reserva
+      </button>
+    </section>
+
+  </main>
+
+  <!-- ── LOADING OVERLAY ──────────────────────────────────── -->
+  <div class="loading-overlay" id="loading-overlay" aria-hidden="true" role="status">
+    <div class="loading-box">
+      <div class="loading-spinner"></div>
+      <p class="loading-message" id="loading-message">Cargando reservas...</p>
+    </div>
+  </div>
+
+  <!-- ── MODAL: Mis Reservas ────────────────────────────────── -->
+  <div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-header">
+        <h2 id="modal-title">📋 Mis Reservas</h2>
+        <button class="modal-close" onclick="closeMyReservations()" aria-label="Cerrar">✕</button>
+      </div>
+      <div class="modal-body" id="modal-body">
+        <!-- filled by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TOAST ──────────────────────────────────────────────── -->
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
