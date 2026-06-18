@@ -4,42 +4,35 @@ Plataforma de reservas para la **Cortadora Láser** y la **Máquina CNC** del la
 
 ---
 
-## 🚀 Configurar Vercel KV (base de datos gratuita)
+## 🚀 Configurar Upstash Redis (base de datos gratuita)
 
 > **Este paso es necesario una sola vez para que las reservas se guarden en la nube.**
 
 ### 1. Deploy en Vercel
 
-Conecta el repositorio `LilTeo14/Reservas-lab` a Vercel si aún no lo has hecho:
+Conecta el repositorio `LilTeo14/Reservas-lab` a Vercel si aún no lo has hecho.
 
-```
-vercel.com → Add New → Project → Import Git Repository → LilTeo14/Reservas-lab
-```
+### 2. Crear la base de datos Redis con Upstash
 
-### 2. Crear la base de datos KV
+Desde el **dashboard de tu proyecto en Vercel → pestaña Storage**:
 
-Desde el **dashboard de tu proyecto en Vercel**:
+1. Clic en **Upstash** (Serverless DB - Redis, Vector, Queue, Search)
+2. Seleccionar **Redis**
+3. Nombre: `reservalab-redis` (o el que prefieras)
+4. Region: la más cercana a tus usuarios
+5. Clic en **Create & Connect**
 
-1. Ir a la pestaña **Storage**
-2. Clic en **Create Database**
-3. Seleccionar **KV** (Upstash Redis)
-4. Nombre: `reservalab-kv` (o el que prefieras)
-5. Región: `Washington D.C., USA (East)` (o la más cercana)
-6. Clic en **Create & Connect**
-
-> ✅ Vercel añade automáticamente las variables de entorno al proyecto.  
+> ✅ Vercel añade automáticamente `UPSTASH_REDIS_REST_URL` y `UPSTASH_REDIS_REST_TOKEN`  
 > No necesitas copiar ningún token manualmente.
 
-### 3. Hacer redeploy
+### 3. Redeploy automático
 
-Después de conectar el KV, haz un nuevo deploy (o simplemente haz un push a GitHub):
+Vercel hace redeploy automáticamente al conectar la base de datos. Si no, haz push a GitHub:
 
 ```bash
-git commit --allow-empty -m "conectar vercel kv"
+git commit --allow-empty -m "trigger redeploy"
 git push
 ```
-
-Vercel desplegará automáticamente con la base de datos lista.
 
 ---
 

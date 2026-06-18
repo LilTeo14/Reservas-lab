@@ -2,12 +2,20 @@
 // api/reservations.js – ReservaLab USM
 // Vercel Serverless Function  (Node.js runtime)
 // Métodos: GET / POST / DELETE
-// Storage:  Vercel KV (Upstash Redis – plan gratuito)
+// Storage:  Upstash Redis (marketplace gratuito de Vercel)
+//
+// Variables de entorno (se añaden automáticamente al conectar
+// Upstash desde el dashboard de Vercel → Storage → Upstash):
+//   UPSTASH_REDIS_REST_URL
+//   UPSTASH_REDIS_REST_TOKEN
 // ============================================================
 
-const { kv } = require('@vercel/kv');
+const { Redis } = require('@upstash/redis');
 
-const KV_KEY     = 'reservalab:v1';
+// Redis.fromEnv() lee UPSTASH_REDIS_REST_URL y UPSTASH_REDIS_REST_TOKEN
+const redis = Redis.fromEnv();
+
+const KV_KEY      = 'reservalab:v1';
 const USM_PATTERN = /^[a-zA-Z0-9._%+\-]+@([a-zA-Z0-9\-]+\.)*usm\.cl$/i;
 
 module.exports = async function handler(req, res) {
@@ -22,7 +30,7 @@ module.exports = async function handler(req, res) {
     // ── GET /api/reservations ─────────────────────────────
     // Devuelve todas las reservas (para mostrar slots ocupados a todos los usuarios)
     if (req.method === 'GET') {
-      const data = (await kv.get(KV_KEY)) ?? {};
+      const data = (await redis.get(KV_KEY)) ?? {};
       return res.status(200).json({ success: true, data });
     }
 
@@ -41,7 +49,7 @@ module.exports = async function handler(req, res) {
       }
 
       // Leer estado actual
-      const all = (await kv.get(KV_KEY)) ?? {};
+      const all = (await redis.get(KV_KEY)) ?? {};
       if (!all[email]) all[email] = [];
 
       // Agregar sólo las reservas que no existan ya
@@ -73,7 +81,7 @@ module.exports = async function handler(req, res) {
         return res.status(400).json({ success: false, error: 'Límite de 3 bloques por semana excedido' });
       }
 
-      await kv.set(KV_KEY, all);
+      await redis.set(KV_KEY, all);
       return res.status(200).json({ success: true, data: all[email] });
     }
 
@@ -88,7 +96,7 @@ module.exports = async function handler(req, res) {
         return res.status(400).json({ success: false, error: 'Email requerido' });
       }
 
-      const all = (await kv.get(KV_KEY)) ?? {};
+      const all = (await redis.get(KV_KEY)) ?? {};
       if (all[email]) {
         all[email] = all[email].filter(r => !(
           r.weekKey  === weekKey  &&
@@ -99,7 +107,7 @@ module.exports = async function handler(req, res) {
         if (all[email].length === 0) delete all[email];
       }
 
-      await kv.set(KV_KEY, all);
+      await redis.set(KV_KEY, all);
       return res.status(200).json({ success: true });
     }
 
@@ -107,9 +115,8 @@ module.exports = async function handler(req, res) {
 
   } catch (err) {
     console.error('[ReservaLab API]', err);
-    // Si KV no está configurado aún, devuelve error descriptivo
-    const msg = err.message?.includes('KV_') || err.message?.includes('token')
-      ? 'Base de datos KV no configurada. Crea y vincula un KV store en el dashboard de Vercel.'
+    const msg = err.message?.includes('UPSTASH') || err.message?.includes('token') || err.message?.includes('fetch')
+      ? 'Base de datos no configurada. Conecta Upstash Redis desde el dashboard de Vercel → Storage.'
       : 'Error interno del servidor';
     return res.status(500).json({ success: false, error: msg });
   }
