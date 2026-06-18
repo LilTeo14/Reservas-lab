@@ -12,8 +12,13 @@
 
 const { Redis } = require('@upstash/redis');
 
-// Redis.fromEnv() lee UPSTASH_REDIS_REST_URL y UPSTASH_REDIS_REST_TOKEN
-const redis = Redis.fromEnv();
+// Las variables de entorno son inyectadas automáticamente por Vercel al conectar
+// la base de datos Upstash desde el dashboard (Storage → Upstash → Connect to Project).
+// El prefijo "reservalab_redis_" viene del nombre de la base de datos creada.
+const redis = new Redis({
+  url:   process.env.reservalab_redis_KV_REST_API_URL   || process.env.UPSTASH_REDIS_REST_URL,
+  token: process.env.reservalab_redis_KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN,
+});
 
 const KV_KEY      = 'reservalab:v1';
 const USM_PATTERN = /^[a-zA-Z0-9._%+\-]+@([a-zA-Z0-9\-]+\.)*usm\.cl$/i;
