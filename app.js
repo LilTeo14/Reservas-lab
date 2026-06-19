@@ -213,15 +213,20 @@ function buildWeekSelector() {
 
 function renderWeekSelector(container) {
   container.innerHTML = '';
-  [0, 1].forEach(offset => {
+  [0, 1, 2].forEach(offset => {
     const mon = getWeekMonday(offset);
     const fri = new Date(mon); fri.setDate(fri.getDate() + 4);
     const btn = document.createElement('button');
     btn.className = 'week-btn' + (selectedWeekOffset === offset ? ' active' : '');
     btn.id = `week-btn-${offset}`;
     btn.setAttribute('aria-pressed', selectedWeekOffset === offset);
+    
+    let weekLabel = '📅 Semana subsiguiente';
+    if (offset === 0) weekLabel = '📅 Esta semana';
+    if (offset === 1) weekLabel = '📅 Próxima semana';
+    
     btn.innerHTML = `
-      <span class="week-label">${offset === 0 ? '📅 Esta semana' : '📅 Próxima semana'}</span>
+      <span class="week-label">${weekLabel}</span>
       <span class="week-range">${shortDate(mon)} – ${shortDate(fri)}</span>
     `;
     btn.addEventListener('click', () => selectWeek(offset));

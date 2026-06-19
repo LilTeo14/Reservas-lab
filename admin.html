@@ -212,6 +212,11 @@
       font-size: .72rem; font-weight: 700; letter-spacing: .08em;
       text-transform: uppercase; color: var(--muted); text-align: left;
       border-bottom: 2px solid var(--border); white-space: nowrap;
+      transition: color var(--trans), background var(--trans);
+    }
+    .reservations-table th:not(:last-child):hover {
+      background: var(--surface);
+      color: var(--accent2);
     }
     .reservations-table td {
       padding: 13px 16px; border-bottom: 1px solid var(--border);
@@ -407,6 +412,7 @@
           <button class="filter-btn active" id="fw-all"  onclick="setFilter('week','all')">Todas</button>
           <button class="filter-btn" id="fw-0"   onclick="setFilter('week','0')">Esta</button>
           <button class="filter-btn" id="fw-1"   onclick="setFilter('week','1')">Próxima</button>
+          <button class="filter-btn" id="fw-2"   onclick="setFilter('week','2')">Subsiguiente</button>
         </div>
         <div class="filter-group">
           <span class="filter-label">Máquina</span>

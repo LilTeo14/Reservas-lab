@@ -19,11 +19,15 @@ const LS_KEY  = 'reservalab_v2'; // fallback local
 
 let allReservations = {}; // Caché local del JSON
 let activeFilters = {
-  week: 'all',     // 'all' | '0' | '1' | 'other'
+  week: 'all',     // 'all' | '0' | '1' | '2' | 'other'
   machine: 'all',  // 'all' | 'laser' | 'cnc'
   status: 'all'    // 'all' | 'pending' | 'attended' | 'noshow'
 };
 let pendingConfirmAction = null; // Para el modal de confirmación
+let currentSort = {
+  column: 'ts',
+  ascending: false
+};
 
 // ── INIT ────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
@@ -33,6 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
   } else {
     showLogin();
   }
+  setupSortingHeaders();
 });
 
 // ── NAVEGACIÓN DE VISTAS ────────────────────────────────────
@@ -245,14 +250,17 @@ function renderTable() {
   const list = getFlatReservations();
   const mon0 = toISODate(getWeekMonday(0));
   const mon1 = toISODate(getWeekMonday(1));
+  const mon2 = toISODate(getWeekMonday(2));
 
   const filtered = list.filter(r => {
     // 1. Filtrar por Semana
     if (activeFilters.week !== 'all') {
       const isWeek0 = r.weekKey && r.weekKey.startsWith(mon0);
       const isWeek1 = r.weekKey && r.weekKey.startsWith(mon1);
+      const isWeek2 = r.weekKey && r.weekKey.startsWith(mon2);
       if (activeFilters.week === '0' && !isWeek0) return false;
       if (activeFilters.week === '1' && !isWeek1) return false;
+      if (activeFilters.week === '2' && !isWeek2) return false;
     }
 
     // 2. Filtrar por Máquina
@@ -263,6 +271,56 @@ function renderTable() {
 
     return true;
   });
+
+  // Ordenar la lista según el criterio actual
+  filtered.sort((a, b) => {
+    if (currentSort.column === 'ts') {
+      const valA = a.ts || 0;
+      const valB = b.ts || 0;
+      return currentSort.ascending ? valA - valB : valB - valA;
+    }
+
+    let valA, valB;
+    switch (currentSort.column) {
+      case 'correo':
+        valA = a.email.toLowerCase();
+        valB = b.email.toLowerCase();
+        break;
+      case 'maquina':
+        valA = a.machine;
+        valB = b.machine;
+        break;
+      case 'bloque':
+      case 'horario':
+        valA = BLOCKS.findIndex(bk => bk.id === a.blockId);
+        valB = BLOCKS.findIndex(bk => bk.id === b.blockId);
+        break;
+      case 'dia':
+        valA = DAYS.indexOf(a.day);
+        valB = DAYS.indexOf(b.day);
+        break;
+      case 'ayudante':
+        valA = (a.ayudante || '').toLowerCase();
+        valB = (b.ayudante || '').toLowerCase();
+        break;
+      case 'semana':
+        valA = a.weekKey || '';
+        valB = b.weekKey || '';
+        break;
+      case 'estado':
+        valA = a.status || 'pending';
+        valB = b.status || 'pending';
+        break;
+      default:
+        return 0;
+    }
+
+    if (valA < valB) return currentSort.ascending ? -1 : 1;
+    if (valA > valB) return currentSort.ascending ? 1 : -1;
+    return 0;
+  });
+
+  updateHeadersUI();
 
   if (filtered.length === 0) {
     tbody.innerHTML = '<tr class="empty-row"><td colspan="9">No se encontraron reservas con los filtros aplicados.</td></tr>';
@@ -285,6 +343,7 @@ function renderTable() {
     let weekLabel = 'Otra';
     if (wkDate === mon0) weekLabel = 'Esta';
     if (wkDate === mon1) weekLabel = 'Próxima';
+    if (wkDate === mon2) weekLabel = 'Subsiguiente';
     const weekSpan = `${weekLabel} (${wkDate})`;
 
     // Badge de estado
@@ -512,4 +571,45 @@ function showToast(message, type = '') {
   toastTimeout = setTimeout(() => {
     toast.className = 'toast';
   }, 3500);
+}
+
+// ── ORDENACIÓN DE TABLA ─────────────────────────────────────
+function setupSortingHeaders() {
+  const headers = document.querySelectorAll('.reservations-table th');
+  const cols = ['correo', 'maquina', 'bloque', 'dia', 'horario', 'ayudante', 'semana', 'estado', 'acciones'];
+  headers.forEach((th, idx) => {
+    const colName = cols[idx];
+    if (colName === 'acciones') return;
+    th.addEventListener('click', () => {
+      if (currentSort.column === colName) {
+        currentSort.ascending = !currentSort.ascending;
+      } else {
+        currentSort.column = colName;
+        currentSort.ascending = true;
+      }
+      renderTable();
+    });
+  });
+}
+
+function updateHeadersUI() {
+  const headers = document.querySelectorAll('.reservations-table th');
+  const cols = ['correo', 'maquina', 'bloque', 'dia', 'horario', 'ayudante', 'semana', 'estado', 'acciones'];
+  headers.forEach((th, idx) => {
+    const colName = cols[idx];
+    if (colName === 'acciones') return;
+    
+    th.style.cursor = 'pointer';
+    th.style.userSelect = 'none';
+    
+    let cleanText = th.textContent.replace(/[ ▲▼]/g, '');
+    
+    if (currentSort.column === colName) {
+      th.innerHTML = `${cleanText} ${currentSort.ascending ? '▲' : '▼'}`;
+      th.style.color = 'var(--accent2)';
+    } else {
+      th.innerHTML = cleanText;
+      th.style.color = 'var(--muted)';
+    }
+  });
 }
