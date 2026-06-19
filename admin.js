@@ -141,6 +141,25 @@ function getWeekMonday(offset) {
 
 function toISODate(date) { return date.toISOString().slice(0, 10); }
 
+function getExactDateLabel(weekKey, dayIndex, dayName) {
+  if (!weekKey) return dayName;
+  const mondayString = weekKey.split('__')[0];
+  const parts = mondayString.split('-');
+  if (parts.length !== 3) return dayName;
+  
+  const year = parseInt(parts[0], 10);
+  const month = parseInt(parts[1], 10) - 1;
+  const day = parseInt(parts[2], 10);
+  
+  const date = new Date(year, month, day);
+  date.setDate(date.getDate() + parseInt(dayIndex));
+  
+  const dayNum = date.getDate().toString().padStart(2, '0');
+  const monthNum = (date.getMonth() + 1).toString().padStart(2, '0');
+  
+  return `${dayName} ${dayNum}/${monthNum}`;
+}
+
 // ── CARGAR DATOS ────────────────────────────────────────────
 async function checkApiAvailable() {
   try {
@@ -361,7 +380,7 @@ function renderTable() {
       <td class="email-cell">${r.email}</td>
       <td><span class="machine-badge ${mBadgeClass}">${mLabel}</span></td>
       <td><strong>${blockLabel}</strong></td>
-      <td>${r.day}</td>
+      <td>${getExactDateLabel(r.weekKey, r.dayIndex, r.day)}</td>
       <td><span style="color:var(--muted);font-size:.78rem;">${blockTime}</span></td>
       <td>${r.ayudante || '—'}</td>
       <td style="font-size:.8rem;color:var(--muted);">${weekSpan}</td>
