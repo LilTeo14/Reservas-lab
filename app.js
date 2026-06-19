@@ -617,6 +617,7 @@ function openMyReservations() {
               <div class="modal-res-block">${r.block.label ?? r.block} &mdash; ${r.day}</div>
               <div class="modal-res-detail">🕐 ${time} &nbsp;·&nbsp; 👤 ${r.ayudante}</div>
             </div>
+          `;
           body.appendChild(row);
         });
       }
