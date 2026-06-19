@@ -475,19 +475,17 @@ function buildConfirmItem(r, persisted, selIdx) {
     </div>
   `;
 
-  const btn = document.createElement('button');
-  btn.className = 'confirm-remove'; btn.title = 'Eliminar'; btn.textContent = '✕';
-  if (persisted) {
-    btn.addEventListener('click', () => cancelPersistedReservation(r));
-  } else {
+  if (!persisted) {
+    const btn = document.createElement('button');
+    btn.className = 'confirm-remove'; btn.title = 'Eliminar'; btn.textContent = '✕';
     btn.addEventListener('click', () => {
       currentSelections.splice(selIdx, 1);
       document.getElementById('blocks-used').textContent =
         countPersistedBlocks(currentEmail, selectedMachine) + currentSelections.length;
       refreshScheduleTable(); updateConfirmBox(); updateConfirmButton();
     });
+    item.appendChild(btn);
   }
-  item.appendChild(btn);
   return item;
 }
 
@@ -619,17 +617,6 @@ function openMyReservations() {
               <div class="modal-res-block">${r.block.label ?? r.block} &mdash; ${r.day}</div>
               <div class="modal-res-detail">🕐 ${time} &nbsp;·&nbsp; 👤 ${r.ayudante}</div>
             </div>
-          `;
-          const cancelBtn = document.createElement('button');
-          cancelBtn.className = 'modal-res-cancel';
-          cancelBtn.textContent = 'Cancelar';
-          cancelBtn.addEventListener('click', async () => {
-            cancelBtn.disabled = true;
-            cancelBtn.textContent = '...';
-            await cancelPersistedReservation(r);
-            openMyReservations();
-          });
-          row.appendChild(cancelBtn);
           body.appendChild(row);
         });
       }

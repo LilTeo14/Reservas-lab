@@ -42,8 +42,20 @@ module.exports = async function handler(req, res) {
     // ── POST /api/reservations ────────────────────────────
     // Body: { email: string, reservations: Reservation[] }
     // Añade reservas al registro del email (sin duplicados)
+    // O si action === 'verify_admin', verifica la contraseña.
     if (req.method === 'POST') {
       const body = req.body ?? {};
+      
+      if (body.action === 'verify_admin') {
+        const { password } = body;
+        const expected = process.env.ADMIN_PASSWORD || 'ReservaLabAdmin2026';
+        if (password === expected) {
+          return res.status(200).json({ success: true });
+        } else {
+          return res.status(401).json({ success: false, error: 'Contraseña incorrecta' });
+        }
+      }
+
       const { email, reservations } = body;
 
       if (!email || !Array.isArray(reservations) || reservations.length === 0) {
@@ -57,7 +69,7 @@ module.exports = async function handler(req, res) {
       const all = (await redis.get(KV_KEY)) ?? {};
       if (!all[email]) all[email] = [];
 
-      // Agregar sólo las reservas que no existan ya
+      // Agregar sólo las reservas que no existan ya (con status por defecto 'pending')
       for (const r of reservations) {
         const dup = all[email].some(e =>
           e.weekKey  === r.weekKey  &&
@@ -65,7 +77,12 @@ module.exports = async function handler(req, res) {
           e.dayIndex === r.dayIndex &&
           e.machine  === r.machine
         );
-        if (!dup) all[email].push(r);
+        if (!dup) {
+          all[email].push({
+            ...r,
+            status: r.status || 'pending'
+          });
+        }
       }
 
       // Validar límite de 3 bloques por semana por máquina por persona
@@ -90,10 +107,56 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ success: true, data: all[email] });
     }
 
+    // Helper para verificar admin
+    const verifyAdmin = (req) => {
+      const auth = req.headers['authorization'];
+      const expected = process.env.ADMIN_PASSWORD || 'ReservaLabAdmin2026';
+      return auth === expected;
+    };
+
+    // ── PUT /api/reservations ─────────────────────────────
+    // Body: { email, weekKey, blockId, dayIndex, machine, status }
+    // Actualiza el estado de una reserva específica
+    if (req.method === 'PUT') {
+      if (!verifyAdmin(req)) {
+        return res.status(401).json({ success: false, error: 'No autorizado' });
+      }
+
+      const body = req.body ?? {};
+      const { email, weekKey, blockId, dayIndex, machine, status } = body;
+
+      if (!email || !weekKey || !blockId || dayIndex === undefined || !machine || !status) {
+        return res.status(400).json({ success: false, error: 'Datos incompletos para actualizar status' });
+      }
+
+      const all = (await redis.get(KV_KEY)) ?? {};
+      if (all[email]) {
+        all[email] = all[email].map(r => {
+          if (
+            r.weekKey  === weekKey  &&
+            r.blockId  === blockId  &&
+            r.dayIndex === parseInt(dayIndex) &&
+            r.machine  === machine
+          ) {
+            return { ...r, status };
+          }
+          return r;
+        });
+        await redis.set(KV_KEY, all);
+        return res.status(200).json({ success: true, data: all[email] });
+      }
+
+      return res.status(404).json({ success: false, error: 'Reserva no encontrada' });
+    }
+
     // ── DELETE /api/reservations ──────────────────────────
     // Body: { email, weekKey, blockId, dayIndex, machine }
-    // Elimina una reserva específica
+    // Elimina una reserva específica (requiere autenticación de admin)
     if (req.method === 'DELETE') {
+      if (!verifyAdmin(req)) {
+        return res.status(401).json({ success: false, error: 'No autorizado' });
+      }
+
       const body = req.body ?? {};
       const { email, weekKey, blockId, dayIndex, machine } = body;
 
@@ -106,7 +169,7 @@ module.exports = async function handler(req, res) {
         all[email] = all[email].filter(r => !(
           r.weekKey  === weekKey  &&
           r.blockId  === blockId  &&
-          r.dayIndex === dayIndex &&
+          r.dayIndex === parseInt(dayIndex) &&
           r.machine  === machine
         ));
         if (all[email].length === 0) delete all[email];
