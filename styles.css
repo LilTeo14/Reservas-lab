@@ -208,6 +208,8 @@ body {
   text-align: left;
   transition: all var(--trans);
   overflow: hidden;
+  color: var(--text);
+  font-family: inherit;
 }
 .machine-card::before {
   content: '';
@@ -225,8 +227,10 @@ body {
 #card-cnc[aria-pressed="true"]   { border-color: var(--cnc);   box-shadow: 0 0 0 4px rgba(0,212,170,.2), var(--shadow); }
 .machine-card[aria-pressed="true"]::before { opacity: 1; }
 
-.machine-icon { font-size: 2.2rem; flex-shrink: 0; }
-.machine-info h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 4px; }
+.machine-icon { font-size: 2.5rem; flex-shrink: 0; }
+.machine-info h3 { font-size: 1.4rem; font-weight: 800; margin-bottom: 6px; }
+#card-laser .machine-info h3 { color: #ff6b8b; }
+#card-cnc .machine-info h3 { color: #22f3c6; }
 .machine-info p  { font-size: .85rem; color: var(--text-muted); line-height: 1.5; }
 
 .machine-check {
