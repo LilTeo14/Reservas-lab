@@ -71,6 +71,26 @@ module.exports = async function handler(req, res) {
 
       // Agregar sólo las reservas que no existan ya (con status por defecto 'pending')
       for (const r of reservations) {
+        // Verificar si el bloque ya está reservado por otra persona
+        let slotTaken = false;
+        for (const [otherEmail, rList] of Object.entries(all)) {
+          if (otherEmail === email) continue;
+          const taken = rList.some(e =>
+            e.weekKey  === r.weekKey  &&
+            e.blockId  === r.blockId  &&
+            e.dayIndex === r.dayIndex &&
+            e.machine  === r.machine
+          );
+          if (taken) {
+            slotTaken = true;
+            break;
+          }
+        }
+
+        if (slotTaken) {
+          return res.status(400).json({ success: false, error: 'Uno o más bloques seleccionados ya están reservados por otro usuario' });
+        }
+
         const dup = all[email].some(e =>
           e.weekKey  === r.weekKey  &&
           e.blockId  === r.blockId  &&

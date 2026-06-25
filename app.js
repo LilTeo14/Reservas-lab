@@ -89,6 +89,25 @@ async function postReservations(email, reservations) {
   if (useLocalStorage) {
     const all = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
     if (!all[email]) all[email] = [];
+    
+    for (const r of reservations) {
+      let slotTaken = false;
+      for (const [otherEmail, rList] of Object.entries(all)) {
+        if (otherEmail === email) continue;
+        const taken = rList.some(e =>
+          e.weekKey === r.weekKey && e.blockId === r.blockId &&
+          e.dayIndex === r.dayIndex && e.machine === r.machine
+        );
+        if (taken) {
+          slotTaken = true;
+          break;
+        }
+      }
+      if (slotTaken) {
+        throw new Error('Uno o más bloques seleccionados ya están reservados por otro usuario');
+      }
+    }
+
     reservations.forEach(r => {
       if (!all[email].some(e =>
         e.weekKey === r.weekKey && e.blockId === r.blockId &&
@@ -554,7 +573,7 @@ async function confirmReservation() {
     );
     document.getElementById('section-confirm').scrollIntoView({ behavior: 'smooth' });
   } catch (e) {
-    showToast('❌ Error al guardar. Intenta de nuevo.', 'error');
+    showToast(`❌ Error al guardar: ${e.message}`, 'error');
   } finally {
     delete btn.dataset.loading;
     setButtonLoading(btn, false);
